@@ -85,6 +85,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const { nanoid } = require("nanoid");
 const bodyParser = require("body-parser");
 const dns = require("dns");
 const urlParser = require("url");
@@ -104,16 +105,30 @@ app.get("/", (req, res) => {
 // POST endpoint to shorten a URL
 app.post("/api/shorturl", (req, res) => {
   const original_url = req.body.url;
+
+  // Étape 1: Valider le format de l'URL avec regex (commence par http:// ou https://)
+  const validUrlRegex = /^https?:\/\/.+/;
+  if (!validUrlRegex.test(original_url)) {
+    return res.json({ error: "invalid url" });
+  }
+
+  // Étape 2: Extraire le hostname
   const hostname = urlParser.parse(original_url).hostname;
 
+  // Étape 3: Vérifier que le domaine existe
   dns.lookup(hostname, (err) => {
     if (err) {
       return res.json({ error: "invalid url" });
-    } else {
-      const short_url = shortid.generate().slice(0, 6);
-      urls[short_url] = original_url;
-      return res.json({ original_url, short_url });
     }
+
+    // Génère un short ID (tu peux utiliser nanoid ou shortid)
+    const short_url = shortid.generate().slice(0, 6);
+    urls[short_url] = original_url;
+
+    return res.json({
+      original_url,
+      short_url,
+    });
   });
 });
 
